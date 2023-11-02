@@ -1,8 +1,12 @@
 defmodule Afinn do
-  import Language
+  alias Language
 
+  @type language :: :en | :dk
+  @type rating :: :positive | :negative | :neutral
+
+  @spec score(String.t(), language()) :: integer()
   def score(text, language) do
-    dictionary = read_dictionaries(language)
+    dictionary = Language.read_dictionaries(language)
 
     Regex.replace(~r/[!'",.?]/, text, "")
     |> String.downcase()
@@ -11,18 +15,20 @@ defmodule Afinn do
     |> Enum.sum()
   end
 
+  @spec score_to_words(String.t(), language()) :: rating()
   def score_to_words(text, language) do
-    score = score(text, language)
+    score(text, language)
+    |> then(fn score ->
+      cond do
+        score > 1 ->
+          :positive
 
-    cond do
-      score > 1 ->
-        :positive
+        score < -1 ->
+          :negative
 
-      score < -1 ->
-        :negative
-
-      score in -1..1 ->
-        :neutral
-    end
+        score in -1..1 ->
+          :neutral
+      end
+    end)
   end
 end
